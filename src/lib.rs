@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 use ordinals::{Height};
 use std::error::Error;
 use std::fmt;
+use metashrew_support::utils::{consensus_decode};
+use std::io::{Cursor};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -678,3 +680,18 @@ impl Index {
 }
 
 
+#[no_mangle]
+pub fn _start() {
+    let data = input();
+    let height = u32::from_le_bytes((&data[0..4]).try_into().unwrap());
+    let reader = &data[4..];
+
+    let block: Block = consensus_decode::<Block>(&mut Cursor::<Vec<u8>>::new(reader.to_vec()))
+        .unwrap();
+
+    let mut index = Index::new();
+    index.height = height;
+    index.index_block(&block).unwrap();
+    
+    flush();
+}
